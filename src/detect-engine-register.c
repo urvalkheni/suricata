@@ -45,7 +45,6 @@
 #include "rust.h"
 
 #include "detect-engine-payload.h"
-#include "detect-engine-dcepayload.h"
 #include "detect-dns-name.h"
 #include "detect-dns-response.h"
 #include "detect-tls-sni.h"
@@ -156,7 +155,6 @@
 #include "detect-icmpv4hdr.h"
 #include "detect-igmphdr.h"
 #include "detect-igmp-type.h"
-#include "detect-dce-stub-data.h"
 #include "detect-urilen.h"
 #include "detect-bsize.h"
 #include "detect-detection-filter.h"
@@ -666,7 +664,6 @@ void SigTableSetup(void)
     DetectIcmpv4HdrRegister();
     DetectIGMPHdrRegister();
     DetectIGMPTypeRegister();
-    DetectDceStubDataRegister();
     DetectTlsRegister();
     DetectTlsValidityRegister();
     DetectTlsVersionRegister();
@@ -734,6 +731,7 @@ void SigTableSetup(void)
     DetectTransformLuaxformRegister();
     DetectTransformGunzipRegister();
     DetectTransformZlibDeflateRegister();
+    DetectTransformSubsliceRegister();
 
     DetectFileHandlerRegister();
 

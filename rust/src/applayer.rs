@@ -317,40 +317,17 @@ pub fn applayer_register_protocol_detection(parser: &RustParser, enable_default:
     unsafe {SCAppLayerRegisterProtocolDetection(&det, enable_default) }
 }
 
-
-// Defined in app-layer-parser.h
-pub const APP_LAYER_PARSER_NO_INSPECTION : u16 = BIT_U16!(1);
-pub const APP_LAYER_PARSER_NO_REASSEMBLY : u16 = BIT_U16!(2);
-pub const APP_LAYER_PARSER_NO_INSPECTION_PAYLOAD : u16 = BIT_U16!(3);
-pub const APP_LAYER_PARSER_BYPASS_READY : u16 = BIT_U16!(4);
-pub const APP_LAYER_PARSER_EOF_TS : u16 = BIT_U16!(5);
-pub const APP_LAYER_PARSER_EOF_TC : u16 = BIT_U16!(6);
-
-pub const APP_LAYER_PARSER_OPT_ACCEPT_GAPS: u32 = BIT_U32!(0);
+pub use suricata_ffi::applayer::{
+    APP_LAYER_PARSER_BYPASS_READY, APP_LAYER_PARSER_EOF_TC, APP_LAYER_PARSER_EOF_TS,
+    APP_LAYER_PARSER_NO_INSPECTION, APP_LAYER_PARSER_NO_INSPECTION_PAYLOAD,
+    APP_LAYER_PARSER_NO_REASSEMBLY, APP_LAYER_PARSER_OPT_ACCEPT_GAPS,
+};
 
 pub const APP_LAYER_TX_SKIP_INSPECT_TS: u8 = BIT_U8!(0);
 pub const APP_LAYER_TX_SKIP_INSPECT_TC: u8 = BIT_U8!(1);
 pub const _APP_LAYER_TX_INSPECTED_TS: u8 = BIT_U8!(2);
 pub const _APP_LAYER_TX_INSPECTED_TC: u8 = BIT_U8!(3);
 pub const APP_LAYER_TX_ACCEPT: u8 = BIT_U8!(4);
-
-pub trait AppLayerGetTxIterTupleRust {
-    fn with_values(tx_ptr: *mut std::os::raw::c_void, tx_id: u64, has_next: bool) -> Self;
-    fn not_found() -> Self;
-}
-
-impl AppLayerGetTxIterTupleRust for AppLayerGetTxIterTuple {
-    fn with_values(tx_ptr: *mut std::os::raw::c_void, tx_id: u64, has_next: bool) -> AppLayerGetTxIterTuple {
-        AppLayerGetTxIterTuple {
-            tx_ptr, tx_id, has_next,
-        }
-    }
-    fn not_found() -> AppLayerGetTxIterTuple {
-        AppLayerGetTxIterTuple {
-            tx_ptr: std::ptr::null_mut(), tx_id: 0, has_next: false,
-        }
-    }
-}
 
 /// AppLayerEvent trait that will be implemented on enums that
 /// derive AppLayerEvent.
@@ -432,48 +409,7 @@ pub unsafe fn get_event_info_by_id<T: AppLayerEvent>(
     return -1;
 }
 
-/// Transaction trait.
-///
-/// This trait defines methods that a Transaction struct must implement
-/// in order to define some generic helper functions.
-pub trait Transaction {
-    fn id(&self) -> u64;
-}
-
-pub trait State<Tx: Transaction> {
-    /// Return the number of transactions in the state's transaction collection.
-    fn get_transaction_count(&self) -> usize;
-
-    /// Return a transaction by its index in the container.
-    fn get_transaction_by_index(&self, index: usize) -> Option<&Tx>;
-
-    fn get_transaction_iterator(&self, min_tx_id: u64, state: &mut u64) -> AppLayerGetTxIterTuple {
-        let mut index = *state as usize;
-        let len = self.get_transaction_count();
-        while index < len {
-            let tx = self.get_transaction_by_index(index).unwrap();
-            if tx.id() < min_tx_id + 1 {
-                index += 1;
-                continue;
-            }
-            *state = index as u64;
-            return AppLayerGetTxIterTuple::with_values(
-                tx as *const _ as *mut _,
-                tx.id() - 1,
-                len - index > 1,
-            );
-        }
-        return AppLayerGetTxIterTuple::not_found();
-    }
-}
-
-pub unsafe extern "C" fn state_get_tx_iterator<S: State<Tx>, Tx: Transaction>(
-    _ipproto: u8, _alproto: AppProto, state: *mut std::os::raw::c_void, min_tx_id: u64,
-    _max_tx_id: u64, istate: *mut AppLayerGetTxIterState,
-) -> AppLayerGetTxIterTuple {
-    let state = cast_pointer!(state, S);
-    state.get_transaction_iterator(min_tx_id, &mut (*istate).un.u64_)
-}
+pub use suricata_ffi::applayer::{state_get_tx_iterator, State, Transaction};
 
 /// AppLayerFrameType trait.
 ///
